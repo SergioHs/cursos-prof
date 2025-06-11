@@ -5,25 +5,47 @@ const InscricaoController = {
         try {
             const usuarioId = req.user.id;
             const cursoId = req.params.idCurso;
+            
+            // Verifica se o curso existe
+            const cursoExiste = await CursoService.buscarPorId(cursoId);
+            if (!cursoExiste) {
+                return res.status(404).json({ 
+                    mensagem: "Curso não encontrado" 
+                });
+            }
 
-            await InscricaoService.inscrever(usuarioId, cursoId);
-            res.status(201).json({ mensagem: 'Inscricão realizada com sucesso'});
+            await CursoService.inscrever(usuarioId, cursoId);
+            return res.status(200).json({ 
+                mensagem: "Inscrição realizada com sucesso" 
+            });
         } catch (error) {
-            res.status(500).json({ mensagem: error.message });
-
+            return res.status(400).json({ 
+                mensagem: "Erro ao realizar inscrição: " + error.message 
+            });
         }
-    }, 
+    },
 
     async cancelar(req, res) {
-
         try {
             const usuarioId = req.user.id;
             const cursoId = req.params.idCurso;
-    
-            await InscricaoService.cancelar(usuarioId, cursoId);
-            res.status(200).json({mensagem: 'Inscrição cancelada com sucesso!'});
+
+            // Verifica se o curso existe
+            const cursoExiste = await CursoService.buscarPorId(cursoId);
+            if (!cursoExiste) {
+                return res.status(404).json({ 
+                    mensagem: "Curso não encontrado" 
+                });
+            }
+
+            await CursoService.cancelarInscricao(usuarioId, cursoId);
+            return res.status(200).json({ 
+                mensagem: "Inscrição cancelada com sucesso" 
+            });
         } catch (error) {
-            res.status(500).json({ mensagem: error.message });
+            return res.status(400).json({ 
+                mensagem: "Erro ao cancelar inscrição: " + error.message 
+            });
         }
     }
 

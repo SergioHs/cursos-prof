@@ -11,8 +11,8 @@ app.use(express.json());
 
 app.use('/cursos', CursoRoutes);
 app.use('/usuarios', UsuarioRoutes);
-app.use('/autenticacao', AuthRoutes);
-app.use('/inscricao', InscricaoRoutes);
+app.use('/login', AuthRoutes);
+//app.use('/inscricao', InscricaoRoutes);
 
 sequelize.sync().then(() => {
     console.log("Banco de dados sincronizado com sucesso!");

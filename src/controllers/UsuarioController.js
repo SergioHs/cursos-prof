@@ -4,7 +4,7 @@ const UsuarioController = {
     async cadastrar(req, res) {
         try {
             const resultado = await UsuarioService.cadastrar(req.body);
-            res.status(201).json(resultado);
+            res.status(200).json(resultado);
         } catch (error) {
             res.status(500).json({ mensagem: error.message });
         }
@@ -19,12 +19,24 @@ const UsuarioController = {
         }
     },
 
-    async login(req, res){ 
+    async login(req, res) {
         try {
             const token = await UsuarioService.login(req.body);
-            res.status(200).json(token);
+            
+            // Define o cookie
+            res.cookie('jwt', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 24 * 60 * 60 * 1000 // 24 horas
+            });
+    
+            // Retorna o token também no body
+            return res.status(200).json({
+                token,
+                mensagem: 'Login realizado com sucesso'
+            });
         } catch (error) {
-            res.status(500).json({ mensagem: error.message });
+            return res.status(400).json({ mensagem: error.message });
         }
     }
 }
