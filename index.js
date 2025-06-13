@@ -3,16 +3,18 @@ const sequelize = require('./config/database');
 const CursoRoutes = require('./src/routes/CursoRoutes');
 const UsuarioRoutes = require('./src/routes/UsuarioRoutes');
 const AuthRoutes = require('./src/routes/AuthRoutes');
-const InscricaoRoutes = require('./src/routes/InscricaoRoutes');
+const RootRoutes = require('./src/routes/RootRoutes');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser()); // Add this line
 
 app.use('/cursos', CursoRoutes);
 app.use('/usuarios', UsuarioRoutes);
 app.use('/login', AuthRoutes);
-//app.use('/inscricao', InscricaoRoutes);
+app.use('/', RootRoutes);
 
 sequelize.sync().then(() => {
     console.log("Banco de dados sincronizado com sucesso!");

@@ -4,58 +4,90 @@ const sequelize = require('../../config/database');
 
 const InscricaoService = {
     async inscrever(usuarioId, cursoId) {
-        const curso = await Curso.findByPk(cursoId);
-        if(!curso) throw new Error('Curso não encontrado!');
+        try {
+            const curso = await Curso.findByPk(cursoId);
+            if (!curso) {
+                throw { status: 404, mensagem: 'Curso não encontrado' };
+            }
 
-        const existente = await Inscricao.findOne({
-            where: {
+            const existente = await Inscricao.findOne({
+                where: {
+                    usuario_id: usuarioId,
+                    curso_id: cursoId,
+                    data_cancelamento: null
+                }
+            });
+
+            if(existente) throw new Error('Usuario já inscrito nesse curso!');
+
+            const novaInscricao = await Inscricao.create({
                 usuario_id: usuarioId,
                 curso_id: cursoId,
+                data_inscricao: new Date(),
                 data_cancelamento: null
+            })
+
+            return novaInscricao;
+
+        } catch (error) {
+            if (error.status) {
+                throw error;
             }
-        });
-
-        if(existente) throw new Error('Usuario já inscrito nesse curso!');
-
-        const novaInscricao = await Inscricao.create({
-            usuario_id: usuarioId,
-            curso_id: cursoId,
-            data_inscricao: new Date(),
-            data_cancelamento: null
-        })
-
-        return novaInscricao;
+            throw { status: 400, mensagem: error.message };
+        }
     },
 
     async cancelar(usuarioId, cursoId) {
-        const [result] = await sequelize.query(
-            `
-            SELECT * FROM inscricoes
-            WHERE usuario_id = :usuarioId
-                AND curso_id = :cursoId
-                AND data_cancelamento IS NULL
-            LIMIT 1
-            `,{
-                replacements: { usuarioId, cursoId },
-                type: sequelize.QueryTypes.SELECT
+        try {
+            const [cursoResult] = await sequelize.query(
+                'SELECT id FROM cursos WHERE id = :cursoId',
+                {
+                    replacements: { cursoId },
+                    type: sequelize.QueryTypes.SELECT
+                }
+            );
+    
+            if (!cursoResult) {
+                throw { status: 404, mensagem: 'Curso não encontrado' };
             }
-        );
-
-        if(!result) throw new Error('Inscrição ativa não encontrada!');
-
-        await sequelize.query(
-            `
-            UPDATE inscricoes
-            SET data_cancelamento = CURRENT_TIMESTAMP
-            WHERE id = :id
-            `,
-            {
-                replacements: {id: result.id},
-                type: sequelize.QueryTypes.UPDATE
+    
+            const [inscricaoResult] = await sequelize.query(
+                `
+                SELECT * FROM inscricoes
+                WHERE usuario_id = :usuarioId
+                    AND curso_id = :cursoId
+                    AND data_cancelamento IS NULL
+                LIMIT 1
+                `,{
+                    replacements: { usuarioId, cursoId },
+                    type: sequelize.QueryTypes.SELECT
+                }
+            );
+    
+            if (!inscricaoResult) {
+                throw { status: 404, mensagem: 'Inscrição não encontrada' };
             }
-        );
+    
+            await sequelize.query(
+                `
+                UPDATE inscricoes
+                SET data_cancelamento = CURRENT_TIMESTAMP
+                WHERE id = :id
+                `,
+                {
+                    replacements: {id: inscricaoResult.id},
+                    type: sequelize.QueryTypes.UPDATE
+                }
+            );
+    
+            return { ...inscricaoResult, data_cancelamento: new Date()}
+        } catch (error) {
+            if (error.status) {
+                throw error;
+            }
+            throw { status: 400, mensagem: error.message };        
+        }
 
-        return { ...result, data_cancelamento: new Date()}
     }
 }
 

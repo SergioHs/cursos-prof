@@ -1,23 +1,17 @@
 const Curso = require('../models/Curso');
+const { Op }  = require('sequelize');
 const Inscricao = require('../models/Inscricao');
-const { Op } = require('sequelize');
 const sequelize = require('../../config/database');
 
 const CursoService = {
-
-    async buscarPorId(cursoId) {
-        const curso = await Curso.findByPk(cursoId);
-        return curso;
-    },
-
-    async listarCursos(userId, filtro) {
+    async listarCursos(usuarioId, filtro) {
         const whereClause = filtro ? {
             [Op.or]: [
-                { nome: { [Op.like]: `%${filtro}%` } },
-                { descricao: { [Op.like]: `%${filtro}%` } }
+                {nome: {[Op.like]: `%${filtro}%`}},
+                {descricao: {[Op.like]: `%${filtro}%`}}
             ]
         } : {};
-        
+
         const cursos = await Curso.findAll({
             where: whereClause,
             include: [
@@ -27,13 +21,13 @@ const CursoService = {
                 }
             ],
             attributes: {
-                include: [
+                include:[
                     [
-                        sequelize.literal('(SELECT COUNT(*) FROM inscricoes WHERE inscricoes.curso_id = Curso.id)'),
+                        sequelize.literal('(SELECT COUNT(*) FROM inscricoes WHERE inscricoes.curso_id = Curso.id)'), 
                         'total_inscricoes'
                     ],
                     [
-                        sequelize.literal(`(SELECT COUNT(*) FROM inscricoes WHERE inscricoes.curso_id = Curso.id AND inscricoes.usuario_id = ${userId})`),
+                        sequelize.literal(`(SELECT COUNT(*) FROM inscricoes WHERE inscricoes.curso_id = Curso.id AND inscricoes.usuario_id = ${usuarioId})`),
                         'usuario_inscrito'
                     ]
                 ]
@@ -51,21 +45,25 @@ const CursoService = {
         }));
     },
 
-    async listarCursosInscritos(userId) {
+    async listarCursosInscritos(usuarioId) {
         const cursos = await Curso.findAll({
-            include: [{
+            include:[{
                 model: Inscricao,
-                where: { 
-                    usuario_id: userId
+                where: {
+                    usuario_id: usuarioId
                 },
                 required: true
             }],
             attributes: {
                 include: [
-                    [sequelize.literal('(SELECT COUNT(*) FROM inscricoes WHERE inscricoes.curso_id = Curso.id)'),
-                    'total_inscricoes'],
-                    [sequelize.literal('(Inscricao.data_cancelamento IS NOT NULL)'),
-                    'inscricao_cancelada']
+                    [
+                        sequelize.literal('(SELECT COUNT(*) FROM inscricoes WHERE inscricoes.curso_id = Curso.id)'),
+                        'total_inscricoes'
+                    ],
+                    [
+                        sequelize.literal('(Inscricaos.data_cancelamento IS NOT NULL)'),
+                        'inscricao_cancelada'
+                    ]
                 ]
             }
         });
@@ -76,13 +74,11 @@ const CursoService = {
             descricao: curso.descricao,
             capa: curso.capa,
             inscricoes: curso.getDataValue('total_inscricoes'),
-            inicio: new Date(curso.inicio).toLocaleDateString('pt-BR'),
+            inicio: new Date(curso.inicio).toLocaleDateString('pt-br'),
             inscricao_cancelada: curso.getDataValue('inscricao_cancelada'),
             inscrito: true
-        }));
+        }))
     }
 }
-
-
 
 module.exports = CursoService;

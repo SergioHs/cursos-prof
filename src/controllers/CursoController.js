@@ -12,7 +12,7 @@ const CursoController = {
         }
     },
 
-    async listarInscritos(req, res) {
+    async listarCursosInscritos(req, res) {
         try {
             const usuarioLogadoId = req.user.id;
             const usuarioSolicitadoId = parseInt(req.params.idUsuario);

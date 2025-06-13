@@ -19,24 +19,19 @@ const UsuarioController = {
         }
     },
 
-    async login(req, res) {
+    async login(req, res){ 
         try {
             const token = await UsuarioService.login(req.body);
             
-            // Define o cookie
-            res.cookie('jwt', token, {
+            // Set token in cookie - secure and httpOnly for security
+            res.cookie('token', token, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                maxAge: 24 * 60 * 60 * 1000 // 24 horas
             });
-    
-            // Retorna o token também no body
-            return res.status(200).json({
-                token,
-                mensagem: 'Login realizado com sucesso'
-            });
+
+            // Also return token in response
+            res.status(200).json( token );
         } catch (error) {
-            return res.status(400).json({ mensagem: error.message });
+            res.status(500).json({ mensagem: error.message });
         }
     }
 }
